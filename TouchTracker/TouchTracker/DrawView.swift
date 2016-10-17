@@ -13,6 +13,7 @@ class DrawView: UIView {
     //var currentLine: Line?
     var currentLines = [NSValue:Line]()
     var finishedLines = [Line]()
+    var selectedLineIndex: Int?
     
     @IBInspectable var finishedLineColor: UIColor = UIColor.black {
         
@@ -63,6 +64,13 @@ class DrawView: UIView {
         
         for (_, line) in currentLines {
             strokeLine(line: line)
+        }
+        
+        if let index = selectedLineIndex {
+            UIColor.green.setStroke()
+            
+            let selectedLine = finishedLines[index]
+            strokeLine(line: selectedLine)
         }
     }
     
@@ -153,17 +161,58 @@ class DrawView: UIView {
         let doubleTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(doubleTap))
         
         doubleTapRecognizer.numberOfTapsRequired = 2
+        doubleTapRecognizer.delaysTouchesBegan = true
         
         addGestureRecognizer(doubleTapRecognizer)
+        
+        let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(tap))
+        
+        tapRecognizer.delaysTouchesBegan = true
+        tapRecognizer.require(toFail: doubleTapRecognizer)
+        
+        addGestureRecognizer(tapRecognizer)
+    }
+    
+    func tap(gestureRecognizer: UIGestureRecognizer) {
+        print("Tap recognized")
+        
+        let point = gestureRecognizer.location(in: self)
+        selectedLineIndex = indexOfLineAtPoint(point: point)
+        
+        setNeedsDisplay()
     }
     
     func doubleTap(gestureRecognizer: UIGestureRecognizer) {
         
         print("Double tap recognized")
         
+        selectedLineIndex = nil
         currentLines.removeAll(keepingCapacity: false)
         finishedLines.removeAll(keepingCapacity: false)
         setNeedsDisplay()
+    }
+    
+    func indexOfLineAtPoint(point: CGPoint) -> Int? {
+        
+        //Find a line close to point
+        for (index, line) in finishedLines.enumerated() {
+            
+            let begin = line.begin
+            let end = line.end
+            
+            //Check a few points on the line
+            for t in stride(from: CGFloat(0), to: 1.0, by: 0.05){
+                
+                let x = begin.x + ((end.x - begin.x) * t)
+                let y = begin.y + ((end.y - begin.y) * t)
+                
+                if hypot(x - point.x, y - point.y) < 20.0 {
+                    return index
+                }
+            }
+        }
+        
+        return nil
     }
     
 }
