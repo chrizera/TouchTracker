@@ -14,10 +14,31 @@ class DrawView: UIView {
     var currentLines = [NSValue:Line]()
     var finishedLines = [Line]()
     
+    @IBInspectable var finishedLineColor: UIColor = UIColor.black {
+        
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
+    @IBInspectable var currentLineColor = UIColor.red {
+        
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
+    @IBInspectable var lineThickness: CGFloat = 10 {
+        
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
     func strokeLine(line: Line) {
         
         let path = UIBezierPath()
-        path.lineWidth = 10
+        path.lineWidth = lineThickness
         path.lineCapStyle = CGLineCap.round
         path.move(to: line.begin)
         path.addLine(to: line.end)
@@ -26,7 +47,7 @@ class DrawView: UIView {
     
     override func draw(_ rect: CGRect) {
         //Draw finished lines in black
-        UIColor.black.setStroke()
+        finishedLineColor.setStroke()
         for line in finishedLines {
             strokeLine(line: line)
         }
@@ -38,7 +59,7 @@ class DrawView: UIView {
         }
         */
         
-        UIColor.red.setStroke()
+        currentLineColor.setStroke()
         
         for (_, line) in currentLines {
             strokeLine(line: line)
@@ -115,6 +136,33 @@ class DrawView: UIView {
             }
         }
         
+        setNeedsDisplay()
+    }
+    
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        
+        currentLines.removeAll()
+        
+        setNeedsDisplay()
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        
+        super.init(coder: aDecoder)
+        
+        let doubleTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(doubleTap))
+        
+        doubleTapRecognizer.numberOfTapsRequired = 2
+        
+        addGestureRecognizer(doubleTapRecognizer)
+    }
+    
+    func doubleTap(gestureRecognizer: UIGestureRecognizer) {
+        
+        print("Double tap recognized")
+        
+        currentLines.removeAll(keepingCapacity: false)
+        finishedLines.removeAll(keepingCapacity: false)
         setNeedsDisplay()
     }
     
